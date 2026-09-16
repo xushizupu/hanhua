@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>教室端模拟器</title>
+    <link rel="stylesheet" href="./simulator.css">
+  </head>
+  <body>
+    <main class="simulator-shell">
+      <section class="simulator-panel">
+        <p class="eyebrow">开发测试工具</p>
+        <h1>教室端模拟器</h1>
+        <p class="intro">用于在没有安装 Windows 客户端时验证消息推送和“收到”回传。</p>
+
+        <form id="agentForm" class="agent-form">
+          <label for="classSelect">教室班级</label>
+          <select id="classSelect" required></select>
+
+          <label for="secretInput">教室设备密码</label>
+          <input id="secretInput" type="password" value="dev-agent-secret-change-me" required>
+
+          <label for="deviceInput">设备编号</label>
+          <input id="deviceInput" type="text" required>
+
+          <button id="connectButton" type="submit">连接教室端</button>
+        </form>
+
+        <div class="connection-row">
+          <span class="status-dot"></span>
+          <span id="agentStatus">未连接</span>
+        </div>
+      </section>
+    </main>
+
+    <div id="popupOverlay" class="popup-overlay is-hidden">
+      <section class="popup-window" role="dialog" aria-modal="true" aria-labelledby="popupTeacher">
+        <div class="popup-priority" id="popupPriority">普通通知</div>
+        <p class="popup-from">来自</p>
+        <h2 id="popupTeacher">教师姓名</h2>
+        <p id="popupContent" class="popup-content"></p>
+        <button id="ackButton" type="button">收到</button>
+      </section>
+    </div>
+
+    <div id="simulatorToast" class="toast"></div>
+    <script src="./config.js"></script>
+    <script type="module" src="./simulator.js"></script>
+  </body>
+</html>

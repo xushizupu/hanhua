@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f6f5">
+    <title>课堂远程喊话系统</title>
+    <link rel="stylesheet" href="./teacher.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">喊</div>
+          <div>
+            <h1>课堂远程喊话系统</h1>
+            <p id="serverLabel">正在连接服务</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span id="connectionStatus" class="status-pill is-offline">
+            <span class="status-dot"></span>
+            <span id="connectionLabel">未连接</span>
+          </span>
+          <button id="profileButton" class="button button-quiet" type="button">切换教师</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="feed-panel panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">全校消息</p>
+              <h2 id="feedTitle">喊话记录</h2>
+            </div>
+            <button id="refreshButton" class="button button-quiet" type="button">刷新</button>
+          </div>
+
+          <div id="feedFilters" class="filter-row" role="tablist" aria-label="消息筛选">
+            <button class="filter-button is-active" data-filter="all" type="button">全部消息</button>
+            <button class="filter-button" data-filter="mine" type="button">我的消息</button>
+            <button class="filter-button" data-filter="private" type="button">我的私信</button>
+            <button class="filter-button" data-filter="unconfirmed" type="button">未确认</button>
+          </div>
+
+          <div id="feedList" class="feed-list" aria-live="polite"></div>
+        </section>
+
+        <aside class="composer-panel panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">发送区域</p>
+              <h2>发送一条喊话</h2>
+            </div>
+          </div>
+
+          <form id="composerForm">
+            <div class="field-group">
+              <div class="field-label-row">
+                <label class="field-label">选择班级</label>
+                <span id="selectedCount" class="field-hint">未选择</span>
+              </div>
+              <div class="select-all-row">
+                <label class="checkbox-label">
+                  <input id="selectAllClasses" type="checkbox">
+                  <span>全选 14 个班级</span>
+                </label>
+              </div>
+              <div id="classList" class="class-list"></div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">常用喊话</label>
+              <div id="phraseList" class="phrase-list"></div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label-row">
+                <label class="field-label" for="contentInput">喊话内容</label>
+                <span id="contentCount" class="field-hint">0 / 120</span>
+              </div>
+              <textarea
+                id="contentInput"
+                class="text-input textarea"
+                maxlength="120"
+                rows="4"
+                placeholder="输入要显示在教室电脑上的内容"
+              ></textarea>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">消息可见范围</label>
+              <div class="segmented-control" role="radiogroup" aria-label="消息可见范围">
+                <label class="segment">
+                  <input type="radio" name="visibility" value="public" checked>
+                  <span>公开消息</span>
+                </label>
+                <label class="segment">
+                  <input type="radio" name="visibility" value="private">
+                  <span>私自喊话</span>
+                </label>
+              </div>
+              <p class="field-note">私自喊话不会出现在公共消息流中，只有你能看到这条记录。</p>
+            </div>
+
+            <div class="form-grid">
+              <div class="field-group">
+                <label class="field-label" for="prioritySelect">消息级别</label>
+                <select id="prioritySelect" class="select-input">
+                  <option value="normal">普通</option>
+                  <option value="important">重要</option>
+                  <option value="urgent">紧急</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="durationSelect">显示时长</label>
+                <select id="durationSelect" class="select-input">
+                  <option value="60">1 分钟</option>
+                  <option value="30">30 秒</option>
+                  <option value="300">5 分钟</option>
+                  <option value="0">一直显示</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="sendButton" class="button button-primary button-large" type="submit">
+              发送到教室
+            </button>
+          </form>
+        </aside>
+      </main>
+    </div>
+
+    <div id="loginOverlay" class="overlay">
+      <div class="login-card">
+        <div class="login-mark" aria-hidden="true">喊</div>
+        <p class="eyebrow">课堂远程喊话系统</p>
+        <h2>连接教师控制台</h2>
+        <p class="login-copy">输入公共访问码和教师姓名。首次登录后，浏览器会记住你的设备身份。</p>
+        <form id="loginForm" class="login-form">
+          <label for="passwordInput">公共访问码</label>
+          <input id="passwordInput" class="text-input" type="password" autocomplete="current-password" required>
+          <label for="teacherNameInput">教师姓名</label>
+          <input id="teacherNameInput" class="text-input" type="text" maxlength="24" placeholder="例如：李老师" required>
+          <button id="loginButton" class="button button-primary button-large" type="submit">进入控制台</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="./config.js"></script>
+    <script type="module" src="./teacher.js"></script>
+  </body>
+</html>
