@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: paishi
+    name: call-student
     runtime: node
     plan: free
     region: singapore
