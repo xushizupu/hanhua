@@ -1,0 +1,7 @@
+{
+  "serverUrl": "https://your-render-service.onrender.com",
+  "classId": "class-01",
+  "deviceId": "classroom-pc-01",
+  "deviceSecret": "请替换为对应教室的设备密码",
+  "autoStart": true
+}

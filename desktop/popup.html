@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>课堂喊话</title>
+    <link rel="stylesheet" href="./popup.css">
+  </head>
+  <body>
+    <main class="popup-shell">
+      <div id="priorityBadge" class="priority-badge">普通通知</div>
+      <p class="from-label">来自</p>
+      <h1 id="teacherName">教师姓名</h1>
+      <p id="messageContent" class="message-content"></p>
+      <button id="ackButton" type="button">收到</button>
+      <p class="hint">点击“收到”后，教师端会显示确认结果</p>
+    </main>
+    <script src="./popup.js"></script>
+  </body>
+</html>

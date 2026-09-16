@@ -1,0 +1,101 @@
+:root {
+  --ink: #17211b;
+  --muted: #66736a;
+  --line: #d6e0d9;
+  --green: #1f6547;
+  --green-dark: #174d36;
+  --amber: #a85a12;
+  --red: #ab2932;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+}
+
+.popup-shell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 38px 46px;
+  border-top: 9px solid var(--green);
+}
+
+.priority-badge {
+  align-self: flex-start;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: var(--green);
+  background: #e7f3eb;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.from-label {
+  margin: 30px 0 4px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.message-content {
+  margin: 25px 0 30px;
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.42;
+  word-break: break-word;
+}
+
+#ackButton {
+  width: 100%;
+  min-height: 62px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--green);
+  font: inherit;
+  font-size: 23px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#ackButton:hover {
+  background: var(--green-dark);
+}
+
+.hint {
+  margin: 12px 0 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+body[data-priority="important"] .priority-badge {
+  color: var(--amber);
+  background: #fff0d9;
+}
+
+body[data-priority="urgent"] .priority-badge {
+  color: var(--red);
+  background: #fde9eb;
+}
+
+body[data-priority="urgent"] .popup-shell {
+  border-top-color: var(--red);
+}

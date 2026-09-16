@@ -1,0 +1,55 @@
+{
+  "name": "classroom-callboard-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Windows classroom agent for the classroom callboard.",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis",
+    "build:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-portable.ps1",
+    "install:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ./dist/win-unpacked/install.ps1",
+    "check": "node --check main.cjs && node --check popup.js && node --check preload.cjs"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "build": {
+    "appId": "cn.school.classroom-callboard",
+    "productName": "课堂喊话教室端",
+    "asar": true,
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "popup.html",
+      "popup.css",
+      "popup.js",
+      "setup.html",
+      "setup.css",
+      "setup.js",
+      "assets/icon.png",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "config.example.json",
+        "to": "config.example.json"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true
+    }
+  }
+}

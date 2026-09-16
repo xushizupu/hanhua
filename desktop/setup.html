@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>教室端配置</title>
+    <link rel="stylesheet" href="./setup.css">
+  </head>
+  <body>
+    <main class="setup-shell">
+      <header class="setup-header">
+        <div class="brand-mark" aria-hidden="true">喊</div>
+        <div>
+          <p id="modeLabel" class="eyebrow">首次配置</p>
+          <h1>连接教室喊话服务</h1>
+        </div>
+      </header>
+
+      <form id="setupForm" class="setup-form">
+        <div class="field-group">
+          <label for="serverInput">Render 服务器地址</label>
+          <div class="inline-field">
+            <input id="serverInput" type="url" placeholder="https://your-service.onrender.com" required>
+            <button id="loadClassesButton" type="button">读取班级</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="classSelect">教室班级</label>
+          <select id="classSelect" required>
+            <option value="">请先读取班级</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="deviceInput">设备编号</label>
+          <input id="deviceInput" type="text" maxlength="80" required>
+          <p class="field-note">默认使用当前电脑名称，也可以按教室统一命名。</p>
+        </div>
+
+        <div class="field-group">
+          <label for="secretInput">设备密码</label>
+          <input id="secretInput" type="password" maxlength="128" autocomplete="off" required>
+          <p class="field-note">不是 Windows 锁屏密码，需要与 Render 中该班级的凭据一致。</p>
+        </div>
+
+        <label class="checkbox-row">
+          <input id="autoStartInput" type="checkbox" checked>
+          <span>开机后自动启动教室端</span>
+        </label>
+
+        <div id="statusRow" class="status-row">
+          <span class="status-dot"></span>
+          <span id="statusText">请填写配置并测试连接</span>
+        </div>
+
+        <div class="button-row">
+          <button id="cancelButton" class="button button-quiet" type="button">取消</button>
+          <button id="testButton" class="button button-quiet" type="button">测试连接</button>
+          <button id="saveButton" class="button button-primary" type="submit">保存并启动</button>
+        </div>
+      </form>
+    </main>
+    <script src="./setup.js"></script>
+  </body>
+</html>
