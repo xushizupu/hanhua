@@ -1,0 +1,7 @@
+node_modules/
+desktop/node_modules/
+desktop/config.json
+desktop/dist/
+data/
+.env
+*.log

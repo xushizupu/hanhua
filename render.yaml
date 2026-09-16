@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: classroom-callboard
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TEACHER_PASSWORD
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: AGENT_SECRETS_JSON
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
