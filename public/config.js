@@ -1,3 +1,3 @@
 window.HANHUA_CONFIG = {
-  API_BASE: ""
+  API_BASE: "https://call-student.onrender.com/"
 };
