@@ -17,6 +17,9 @@ const AGENT_SECRET = process.env.AGENT_SECRET || "dev-agent-secret-change-me";
 const SESSION_TTL_SECONDS = 90 * 24 * 60 * 60;
 const HISTORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_BODY_BYTES = 64 * 1024;
+const AGENT_PING_INTERVAL_MS = 30 * 1000;
+const DELIVERY_ACK_TIMEOUT_MS = 10 * 1000;
+const MIN_DELIVERY_RETENTION_MS = 10 * 60 * 1000;
 
 let agentSecrets = {};
 try {
@@ -47,6 +50,23 @@ const teacherSockets = new Set();
 const agentSockets = new Map();
 const devicePresence = new Map();
 const wss = new WebSocketServer({ noServer: true });
+const agentPingTimer = setInterval(() => {
+  for (const sockets of agentSockets.values()) {
+    for (const socket of sockets) {
+      if (socket.isAlive === false) {
+        socket.terminate();
+        continue;
+      }
+      socket.isAlive = false;
+      try {
+        socket.ping();
+      } catch {
+        socket.terminate();
+      }
+    }
+  }
+}, AGENT_PING_INTERVAL_MS);
+agentPingTimer.unref?.();
 
 let state = {
   version: 1,
@@ -123,11 +143,16 @@ function getAgentIdentity(req, url) {
 }
 
 function getDeviceStatus() {
+  const now = Date.now();
   return Object.fromEntries(classes.map((classItem) => {
     const presence = devicePresence.get(classItem.id);
     const connections = agentSockets.get(classItem.id)?.size || 0;
     return [classItem.id, {
-      online: connections > 0,
+      online: Boolean(
+        connections > 0
+        && presence
+        && now - presence.lastSeenAt < 90 * 1000
+      ),
       lastSeenAt: presence?.lastSeenAt ? toIso(presence.lastSeenAt) : null,
       version: presence?.version || "",
       connections
@@ -135,8 +160,9 @@ function getDeviceStatus() {
   }));
 }
 
-function isExpired(batch) {
-  return Boolean(batch.expiresAt && new Date(batch.expiresAt).getTime() <= Date.now());
+function isDeliveryExpired(batch) {
+  const cutoff = batch.deliveryExpiresAt || batch.expiresAt;
+  return Boolean(cutoff && new Date(cutoff).getTime() <= Date.now());
 }
 
 function presentBatch(batch, teacherId) {
@@ -144,7 +170,7 @@ function presentBatch(batch, teacherId) {
   const deliveries = batch.deliveries || {};
   const deliveredCount = targetClassIds.filter((classId) => deliveries[classId]?.deliveredAt).length;
   const acknowledgedCount = targetClassIds.filter((classId) => deliveries[classId]?.acknowledgedAt).length;
-  const expired = isExpired(batch);
+  const expired = isDeliveryExpired(batch);
   let status = "pending";
 
   if (acknowledgedCount === targetClassIds.length && targetClassIds.length > 0) {
@@ -224,7 +250,7 @@ function pendingBatchesForClass(classId) {
     return delivery
       && batch.targetClassIds?.includes(classId)
       && !delivery.acknowledgedAt
-      && !isExpired(batch);
+      && !isDeliveryExpired(batch);
   });
 }
 
@@ -357,7 +383,7 @@ function broadcastTeachers() {
 function broadcastAgents() {
   for (const [classId, sockets] of agentSockets.entries()) {
     for (const socket of sockets) {
-      if (socket.readyState === WebSocket.OPEN) {
+      if (socket.readyState === WebSocket.OPEN && socket.isAlive !== false) {
         sendPendingToAgent(classId, socket);
       }
     }
@@ -376,8 +402,17 @@ async function markBatchDelivered(batchId, classId) {
   broadcastTeachers();
 }
 
+function clearDeliveryTimer(socket, batchId) {
+  const timer = socket.pendingDeliveryTimers?.get(batchId);
+  if (timer) {
+    clearTimeout(timer);
+    socket.pendingDeliveryTimers.delete(batchId);
+  }
+}
+
 function sendPendingToAgent(classId, socket) {
   socket.sentBatchIds ||= new Set();
+  socket.pendingDeliveryTimers ||= new Map();
   const pending = pendingBatchesForClass(classId);
   for (const batch of pending) {
     if (socket.sentBatchIds.has(batch.id)) {
@@ -388,8 +423,22 @@ function sendPendingToAgent(classId, socket) {
       socket.send(JSON.stringify({
         type: "message",
         message: getAgentBatch(batch, classId)
-      }));
-      void markBatchDelivered(batch.id, classId);
+      }), (error) => {
+        if (error) {
+          socket.sentBatchIds.delete(batch.id);
+          clearDeliveryTimer(socket, batch.id);
+          socket.terminate();
+        }
+      });
+      clearDeliveryTimer(socket, batch.id);
+      const retryTimer = setTimeout(() => {
+        socket.pendingDeliveryTimers.delete(batch.id);
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.sentBatchIds.delete(batch.id);
+          sendPendingToAgent(classId, socket);
+        }
+      }, DELIVERY_ACK_TIMEOUT_MS);
+      socket.pendingDeliveryTimers.set(batch.id, retryTimer);
     }
   }
 }
@@ -420,6 +469,7 @@ function registerTeacherSocket(socket, identity) {
 
 function registerAgentSocket(socket, identity) {
   socket.identity = identity;
+  socket.isAlive = true;
   const classId = identity.classId;
   if (!agentSockets.has(classId)) {
     agentSockets.set(classId, new Set());
@@ -435,6 +485,8 @@ function registerAgentSocket(socket, identity) {
   broadcastTeachers();
 
   socket.on("message", async (raw) => {
+    const wasAlive = socket.isAlive;
+    socket.isAlive = true;
     let message;
     try {
       message = JSON.parse(raw.toString());
@@ -444,11 +496,28 @@ function registerAgentSocket(socket, identity) {
 
     if (message.type === "heartbeat") {
       setDevicePresence(classId, identity, message.appVersion);
-      broadcastTeachers();
+      socket.send(JSON.stringify({
+        type: "heartbeat-confirmed",
+        requestId: message.requestId || ""
+      }));
+      if (!wasAlive) {
+        sendPendingToAgent(classId, socket);
+      }
+      return;
+    }
+
+    if (message.type === "received" && typeof message.batchId === "string") {
+      clearDeliveryTimer(socket, message.batchId);
+      await markBatchDelivered(message.batchId, classId);
+      socket.send(JSON.stringify({
+        type: "received-confirmed",
+        batchId: message.batchId
+      }));
       return;
     }
 
     if (message.type === "ack" && typeof message.batchId === "string") {
+      clearDeliveryTimer(socket, message.batchId);
       const batch = state.batches.find((item) => item.id === message.batchId);
       const delivery = batch?.deliveries?.[classId];
       if (!batch || !delivery) {
@@ -472,12 +541,29 @@ function registerAgentSocket(socket, identity) {
   });
 
   socket.on("close", () => {
+    for (const timer of socket.pendingDeliveryTimers?.values() || []) {
+      clearTimeout(timer);
+    }
+    socket.pendingDeliveryTimers?.clear();
     const sockets = agentSockets.get(classId);
     sockets?.delete(socket);
     if (sockets && sockets.size === 0) {
       agentSockets.delete(classId);
     }
     broadcastTeachers();
+  });
+
+  socket.on("pong", () => {
+    const wasAlive = socket.isAlive;
+    socket.isAlive = true;
+    setDevicePresence(classId, identity);
+    if (!wasAlive) {
+      sendPendingToAgent(classId, socket);
+    }
+  });
+
+  socket.on("error", () => {
+    socket.terminate();
   });
 }
 
@@ -584,6 +670,9 @@ async function handleApi(req, res, url) {
       duration,
       createdAt: toIso(now),
       expiresAt: duration > 0 ? toIso(now + duration * 1000) : null,
+      deliveryExpiresAt: duration > 0
+        ? toIso(now + Math.max(duration * 1000, MIN_DELIVERY_RETENTION_MS))
+        : null,
       deliveries: Object.fromEntries(targetClassIds.map((classId) => [
         classId,
         { deliveredAt: null, acknowledgedAt: null }
