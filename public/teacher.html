@@ -27,80 +27,28 @@
       </header>
 
       <main class="workspace">
-        <section class="feed-panel panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">全校消息</p>
-              <h2 id="feedTitle">喊话记录</h2>
-            </div>
-            <button id="refreshButton" class="button button-quiet" type="button">刷新</button>
-          </div>
-
-          <div id="feedFilters" class="filter-row" role="tablist" aria-label="消息筛选">
-            <button class="filter-button is-active" data-filter="all" type="button">全部消息</button>
-            <button class="filter-button" data-filter="mine" type="button">我的消息</button>
-            <button class="filter-button" data-filter="private" type="button">我的私信</button>
-            <button class="filter-button" data-filter="unconfirmed" type="button">未确认</button>
-          </div>
-
-          <div id="feedList" class="feed-list" aria-live="polite"></div>
-        </section>
-
-        <aside class="composer-panel panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">发送区域</p>
-              <h2>发送一条喊话</h2>
-            </div>
-          </div>
-
+        <aside class="composer-panel panel" aria-label="发送区域">
           <form id="composerForm">
             <div class="field-group">
-              <div class="field-label-row">
-                <label class="field-label">选择班级</label>
-                <span id="selectedCount" class="field-hint">未选择</span>
+              <div id="classPicker" class="class-picker">
+                <button
+                  id="classPickerButton"
+                  class="class-picker-button"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                >
+                  <span id="classPickerLabel">请选择班级</span>
+                  <span class="class-picker-arrow" aria-hidden="true">⌄</span>
+                </button>
+                <div id="classPickerMenu" class="class-picker-menu is-hidden">
+                  <div id="classOptions" class="class-options" role="listbox" aria-multiselectable="true"></div>
+                  <label class="select-all-option">
+                    <input id="selectAllClasses" type="checkbox">
+                    <span id="selectAllLabel">全选 14 个班级</span>
+                  </label>
+                </div>
               </div>
-              <div class="select-all-row">
-                <label class="checkbox-label">
-                  <input id="selectAllClasses" type="checkbox">
-                  <span>全选 14 个班级</span>
-                </label>
-              </div>
-              <div id="classList" class="class-list"></div>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">常用喊话</label>
-              <div id="phraseList" class="phrase-list"></div>
-            </div>
-
-            <div class="field-group">
-              <div class="field-label-row">
-                <label class="field-label" for="contentInput">喊话内容</label>
-                <span id="contentCount" class="field-hint">0 / 120</span>
-              </div>
-              <textarea
-                id="contentInput"
-                class="text-input textarea"
-                maxlength="120"
-                rows="4"
-                placeholder="输入要显示在教室电脑上的内容"
-              ></textarea>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">消息可见范围</label>
-              <div class="segmented-control" role="radiogroup" aria-label="消息可见范围">
-                <label class="segment">
-                  <input type="radio" name="visibility" value="public" checked>
-                  <span>公开消息</span>
-                </label>
-                <label class="segment">
-                  <input type="radio" name="visibility" value="private">
-                  <span>私自喊话</span>
-                </label>
-              </div>
-              <p class="field-note">私自喊话不会出现在公共消息流中，只有你能看到这条记录。</p>
             </div>
 
             <div class="form-grid">
@@ -123,11 +71,60 @@
               </div>
             </div>
 
+            <div class="field-group">
+              <label class="field-label">消息可见范围</label>
+              <div class="segmented-control" role="radiogroup" aria-label="消息可见范围">
+                <label class="segment">
+                  <input type="radio" name="visibility" value="public" checked>
+                  <span>公开消息</span>
+                </label>
+                <label class="segment">
+                  <input type="radio" name="visibility" value="private">
+                  <span>私自喊话</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">常用喊话</label>
+              <div id="phraseList" class="phrase-list"></div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label-row">
+                <label class="field-label" for="contentInput">喊话内容</label>
+                <span id="contentCount" class="field-hint">0 / 120</span>
+              </div>
+              <textarea
+                id="contentInput"
+                class="text-input textarea"
+                maxlength="120"
+                rows="4"
+                placeholder="输入要显示在教室电脑上的内容"
+              ></textarea>
+            </div>
+
             <button id="sendButton" class="button button-primary button-large" type="submit">
               发送到教室
             </button>
           </form>
         </aside>
+
+        <section class="feed-panel panel">
+          <div class="panel-heading">
+            <h2 id="feedTitle">喊话记录</h2>
+            <button id="refreshButton" class="button button-quiet" type="button">刷新</button>
+          </div>
+
+          <div id="feedFilters" class="filter-row" role="tablist" aria-label="消息筛选">
+            <button class="filter-button is-active" data-filter="all" type="button">全校信息</button>
+            <button class="filter-button" data-filter="mine" type="button">我的消息</button>
+            <button class="filter-button" data-filter="private" type="button">我的私信</button>
+            <button class="filter-button" data-filter="unconfirmed" type="button">未确认</button>
+          </div>
+
+          <div id="feedList" class="feed-list" aria-live="polite"></div>
+        </section>
       </main>
     </div>
 

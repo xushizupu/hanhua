@@ -25,6 +25,8 @@
 html,
 body {
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -33,6 +35,7 @@ body {
   color: var(--ink);
   font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
   font-size: 16px;
+  overscroll-behavior-x: none;
 }
 
 button,
@@ -44,10 +47,12 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .topbar {
@@ -75,6 +80,11 @@ button {
 
 .brand {
   gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.brand > div:last-child {
   min-width: 0;
 }
 
@@ -156,7 +166,7 @@ button {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 430px);
+  grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
   gap: 20px;
   width: min(1500px, 100%);
   margin: 0 auto;
@@ -176,10 +186,14 @@ button {
 }
 
 .feed-panel {
+  grid-column: 2;
+  grid-row: 1;
   padding: 22px;
 }
 
 .composer-panel {
+  grid-column: 1;
+  grid-row: 1;
   align-self: start;
   padding: 22px;
 }
@@ -377,6 +391,7 @@ button {
   margin: 12px 0 14px;
   font-size: 18px;
   line-height: 1.55;
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
 
@@ -520,6 +535,111 @@ button {
   max-height: 220px;
   overflow-y: auto;
   padding-right: 2px;
+}
+
+.class-picker {
+  position: relative;
+}
+
+.class-picker-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  color: var(--ink);
+  background: #ffffff;
+  text-align: left;
+}
+
+.class-picker-button:hover,
+.class-picker-button[aria-expanded="true"] {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(31, 101, 71, 0.12);
+}
+
+.class-picker-arrow {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.class-picker-menu {
+  position: absolute;
+  z-index: 25;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(23, 33, 27, 0.16);
+}
+
+.class-options {
+  display: grid;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.class-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 0 11px;
+  border-bottom: 1px solid #edf1ee;
+  cursor: pointer;
+}
+
+.class-option:hover {
+  background: #f7faf8;
+}
+
+.class-option input,
+.select-all-option input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--green);
+}
+
+.class-option-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.class-option .device-state {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.select-all-option {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 11px;
+  border-top: 1px solid var(--line);
+  background: #f8faf8;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.is-hidden {
+  display: none !important;
 }
 
 .checkbox-label,
@@ -704,7 +824,13 @@ button {
   }
 
   .composer-panel {
+    grid-column: 1;
     grid-row: 1;
+  }
+
+  .feed-panel {
+    grid-column: 1;
+    grid-row: 2;
   }
 
   .feed-list {
@@ -742,9 +868,14 @@ button {
     font-size: 20px;
   }
 
-  .class-list,
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .text-input,
+  .select-input,
+  .textarea {
+    font-size: 16px;
   }
 
   .message-content {

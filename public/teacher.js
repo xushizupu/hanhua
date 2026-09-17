@@ -17,10 +17,14 @@ const elements = {
   feedTitle: document.querySelector("#feedTitle"),
   feedList: document.querySelector("#feedList"),
   composerForm: document.querySelector("#composerForm"),
-  classList: document.querySelector("#classList"),
+  classPicker: document.querySelector("#classPicker"),
+  classPickerButton: document.querySelector("#classPickerButton"),
+  classPickerMenu: document.querySelector("#classPickerMenu"),
+  classPickerLabel: document.querySelector("#classPickerLabel"),
+  classOptions: document.querySelector("#classOptions"),
   phraseList: document.querySelector("#phraseList"),
-  selectedCount: document.querySelector("#selectedCount"),
   selectAllClasses: document.querySelector("#selectAllClasses"),
+  selectAllLabel: document.querySelector("#selectAllLabel"),
   contentInput: document.querySelector("#contentInput"),
   contentCount: document.querySelector("#contentCount"),
   prioritySelect: document.querySelector("#prioritySelect"),
@@ -43,6 +47,7 @@ const state = {
   deviceStatus: {},
   selectedClassIds: new Set(),
   currentFilter: "all",
+  classPickerOpen: false,
   socket: null,
   reconnectTimer: null,
   reconnectAttempt: 0,
@@ -150,7 +155,7 @@ function applySnapshot(snapshot) {
   const validClassIds = new Set(state.classes.map((item) => item.id));
   state.selectedClassIds = new Set([...state.selectedClassIds].filter((classId) => validClassIds.has(classId)));
 
-  elements.feedTitle.textContent = state.teacher?.name ? `${state.teacher.name}的喊话记录` : "喊话记录";
+  elements.feedTitle.textContent = "喊话记录";
   renderClasses();
   renderPhrases();
   renderFeed();
@@ -245,23 +250,30 @@ function startPollingFallback() {
 }
 
 function renderClasses() {
-  const currentIds = state.selectedClassIds;
-  elements.classList.replaceChildren();
+  elements.classOptions.replaceChildren();
 
   for (const classItem of state.classes) {
-    const label = document.createElement("label");
-    label.className = "checkbox-label";
+    const row = document.createElement("div");
+    row.className = "class-option";
+    row.dataset.classId = classItem.id;
+    row.setAttribute("role", "option");
+
     const input = document.createElement("input");
     input.type = "checkbox";
     input.value = classItem.id;
-    input.checked = currentIds.has(classItem.id);
+    input.checked = state.selectedClassIds.has(classItem.id);
+    input.setAttribute("aria-label", classItem.name);
+
     const text = document.createElement("span");
+    text.className = "class-option-name";
     text.textContent = classItem.name;
+
     const device = state.deviceStatus[classItem.id];
     const deviceState = document.createElement("span");
     deviceState.className = `device-state ${device?.online ? "is-online" : "is-offline"}`;
     deviceState.textContent = device?.online ? "在线" : "离线";
-    label.append(input, text, deviceState);
+
+    row.append(input, text, deviceState);
     input.addEventListener("change", () => {
       if (input.checked) {
         state.selectedClassIds.add(classItem.id);
@@ -270,23 +282,45 @@ function renderClasses() {
       }
       updateSelectionSummary();
     });
-    elements.classList.append(label);
+
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("input")) {
+        return;
+      }
+      state.selectedClassIds = new Set([classItem.id]);
+      updateSelectionSummary();
+      setClassPickerOpen(false);
+    });
+
+    elements.classOptions.append(row);
   }
 
-  const allCountLabel = elements.selectAllClasses.closest("label")?.querySelector("span");
-  if (allCountLabel) {
-    allCountLabel.textContent = `全选 ${state.classes.length} 个班级`;
-  }
-
+  elements.selectAllLabel.textContent = `全选 ${state.classes.length} 个班级`;
   updateSelectionSummary();
 }
 
 function updateSelectionSummary() {
   const selectedCount = state.selectedClassIds.size;
   const allCount = state.classes.length;
-  elements.selectedCount.textContent = selectedCount ? `已选择 ${selectedCount} 个班级` : "未选择";
+
+  if (selectedCount === 0) {
+    elements.classPickerLabel.textContent = "请选择班级";
+  } else if (selectedCount === 1) {
+    const [classId] = state.selectedClassIds;
+    const className = state.classes.find((item) => item.id === classId)?.name || classId;
+    elements.classPickerLabel.textContent = `已选 ${className}`;
+  } else {
+    elements.classPickerLabel.textContent = `已选中 ${selectedCount} 个班级`;
+  }
+
   elements.selectAllClasses.checked = allCount > 0 && selectedCount === allCount;
   elements.selectAllClasses.indeterminate = selectedCount > 0 && selectedCount < allCount;
+}
+
+function setClassPickerOpen(open) {
+  state.classPickerOpen = open;
+  elements.classPickerMenu.classList.toggle("is-hidden", !open);
+  elements.classPickerButton.setAttribute("aria-expanded", String(open));
 }
 
 function renderPhrases() {
@@ -463,6 +497,10 @@ function renderFeed() {
   }
 }
 
+elements.classPickerButton.addEventListener("click", () => {
+  setClassPickerOpen(!state.classPickerOpen);
+});
+
 elements.selectAllClasses.addEventListener("change", () => {
   if (elements.selectAllClasses.checked) {
     state.selectedClassIds = new Set(state.classes.map((item) => item.id));
@@ -470,6 +508,18 @@ elements.selectAllClasses.addEventListener("change", () => {
     state.selectedClassIds.clear();
   }
   renderClasses();
+});
+
+document.addEventListener("click", (event) => {
+  if (!elements.classPicker.contains(event.target)) {
+    setClassPickerOpen(false);
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setClassPickerOpen(false);
+  }
 });
 
 elements.contentInput.addEventListener("input", () => {
