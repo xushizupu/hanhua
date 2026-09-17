@@ -170,12 +170,13 @@ function presentBatch(batch, teacherId) {
   const deliveries = batch.deliveries || {};
   const deliveredCount = targetClassIds.filter((classId) => deliveries[classId]?.deliveredAt).length;
   const acknowledgedCount = targetClassIds.filter((classId) => deliveries[classId]?.acknowledgedAt).length;
+  const dismissedCount = targetClassIds.filter((classId) => deliveries[classId]?.dismissedAt).length;
   const expired = isDeliveryExpired(batch);
   let status = "pending";
 
   if (acknowledgedCount === targetClassIds.length && targetClassIds.length > 0) {
     status = "acknowledged";
-  } else if (expired) {
+  } else if (expired || (dismissedCount > 0 && dismissedCount + acknowledgedCount === targetClassIds.length)) {
     status = "expired";
   } else if (deliveredCount === targetClassIds.length && targetClassIds.length > 0) {
     status = "delivered";
@@ -204,7 +205,8 @@ function presentBatch(batch, teacherId) {
         classId,
         className: getClassById(classId)?.name || classId,
         deliveredAt: deliveries[classId]?.deliveredAt || null,
-        acknowledgedAt: deliveries[classId]?.acknowledgedAt || null
+        acknowledgedAt: deliveries[classId]?.acknowledgedAt || null,
+        dismissedAt: deliveries[classId]?.dismissedAt || null
       }
     ]))
   };
@@ -239,6 +241,7 @@ function getAgentBatch(batch, classId) {
     content: batch.content,
     priority: batch.priority,
     visibility: batch.visibility,
+    duration: batch.duration,
     createdAt: batch.createdAt,
     expiresAt: batch.expiresAt
   };
@@ -250,6 +253,7 @@ function pendingBatchesForClass(classId) {
     return delivery
       && batch.targetClassIds?.includes(classId)
       && !delivery.acknowledgedAt
+      && !delivery.dismissedAt
       && !isDeliveryExpired(batch);
   });
 }
@@ -516,6 +520,22 @@ function registerAgentSocket(socket, identity) {
       return;
     }
 
+    if (message.type === "dismissed" && typeof message.batchId === "string") {
+      const batch = state.batches.find((item) => item.id === message.batchId);
+      const delivery = batch?.deliveries?.[classId];
+      if (batch && delivery && !delivery.acknowledgedAt) {
+        delivery.dismissedAt = toIso();
+        delivery.deliveredAt ||= delivery.dismissedAt;
+        await persistState();
+        broadcastTeachers();
+      }
+      socket.send(JSON.stringify({
+        type: "dismissed-confirmed",
+        batchId: message.batchId
+      }));
+      return;
+    }
+
     if (message.type === "ack" && typeof message.batchId === "string") {
       clearDeliveryTimer(socket, message.batchId);
       const batch = state.batches.find((item) => item.id === message.batchId);
@@ -675,7 +695,7 @@ async function handleApi(req, res, url) {
         : null,
       deliveries: Object.fromEntries(targetClassIds.map((classId) => [
         classId,
-        { deliveredAt: null, acknowledgedAt: null }
+        { deliveredAt: null, acknowledgedAt: null, dismissedAt: null }
       ]))
     };
 
