@@ -11,6 +11,9 @@ let tray = null;
 let setupWindow = null;
 let socket = null;
 let reconnectTimer = null;
+let heartbeatTimer = null;
+let lastServerActivityAt = 0;
+let reconnectAttempt = 0;
 let activePopup = null;
 let messageQueue = [];
 let isQuitting = false;
@@ -251,6 +254,7 @@ function showNextMessage() {
 }
 
 function handleSocketMessage(raw) {
+  lastServerActivityAt = Date.now();
   let payload;
   try {
     payload = JSON.parse(raw.toString());
@@ -265,6 +269,12 @@ function handleSocketMessage(raw) {
   }
 
   if (payload.type === "message") {
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({
+        type: "received",
+        batchId: payload.message.batchId
+      }));
+    }
     enqueueMessage(payload.message);
     return;
   }
@@ -278,6 +288,8 @@ function handleSocketMessage(raw) {
 function disconnectAgent() {
   clearTimeout(reconnectTimer);
   reconnectTimer = null;
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = null;
   if (socket) {
     socket.removeAllListeners();
     socket.close();
@@ -305,22 +317,55 @@ async function connect() {
     updateTrayStatus("正在连接 Render");
 
     currentSocket.on("open", () => {
+      reconnectAttempt = 0;
+      lastServerActivityAt = Date.now();
       updateTrayStatus(`已连接，班级：${config.classId}`);
-      currentSocket.send(JSON.stringify({ type: "heartbeat", appVersion: APP_VERSION }));
+      const sendHeartbeat = () => {
+        if (currentSocket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+        currentSocket.send(JSON.stringify({
+          type: "heartbeat",
+          appVersion: APP_VERSION,
+          requestId: `${Date.now()}-${Math.random().toString(36).slice(2)}`
+        }), (error) => {
+          if (error) {
+            currentSocket.terminate();
+          }
+        });
+      };
+
+      sendHeartbeat();
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = setInterval(() => {
+        if (Date.now() - lastServerActivityAt > 75 * 1000) {
+          currentSocket.terminate();
+          return;
+        }
+        sendHeartbeat();
+      }, 30 * 1000);
       sendPendingAcks();
     });
 
     currentSocket.on("message", handleSocketMessage);
+    currentSocket.on("ping", () => {
+      lastServerActivityAt = Date.now();
+    });
     currentSocket.on("close", () => {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
       if (socket !== currentSocket || isQuitting) {
         return;
       }
       socket = null;
       updateTrayStatus("连接已断开，正在重连");
-      reconnectTimer = setTimeout(connect, 5000);
+      const delay = Math.min(30_000, 1000 * (2 ** reconnectAttempt));
+      reconnectAttempt += 1;
+      reconnectTimer = setTimeout(connect, delay);
     });
     currentSocket.on("error", () => {
       updateTrayStatus("连接异常，正在重连");
+      currentSocket.terminate();
     });
   } catch (error) {
     console.error(error);
