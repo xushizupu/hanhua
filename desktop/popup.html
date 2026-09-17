@@ -8,9 +8,13 @@
   </head>
   <body>
     <main class="popup-shell">
-      <div id="priorityBadge" class="priority-badge">普通通知</div>
-      <p class="from-label">来自</p>
-      <h1 id="teacherName">教师姓名</h1>
+      <header class="popup-header">
+        <h1 id="teacherName">老师：</h1>
+        <div class="popup-meta">
+          <span id="priorityBadge" class="priority-badge">普通通知</span>
+          <time id="messageTime" class="message-time"></time>
+        </div>
+      </header>
       <p id="messageContent" class="message-content"></p>
       <button id="ackButton" type="button">收到</button>
       <p class="hint">点击“收到”后，教师端会显示确认结果</p>

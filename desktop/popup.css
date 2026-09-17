@@ -29,12 +29,34 @@ body {
   flex-direction: column;
   justify-content: center;
   min-height: 100vh;
-  padding: 38px 46px;
+  padding: 34px 42px;
   border-top: 9px solid var(--green);
 }
 
+.popup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+h1 {
+  min-width: 0;
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.popup-meta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 7px;
+}
+
 .priority-badge {
-  align-self: flex-start;
   padding: 7px 12px;
   border-radius: 999px;
   color: var(--green);
@@ -43,28 +65,23 @@ body {
   font-weight: 800;
 }
 
-.from-label {
-  margin: 30px 0 4px;
+.message-time {
   color: var(--muted);
-  font-size: 16px;
-}
-
-h1 {
-  margin: 0;
-  font-size: 30px;
+  font-size: 13px;
 }
 
 .message-content {
-  margin: 25px 0 30px;
-  font-size: 42px;
+  margin: 30px 0 32px;
+  font-size: 46px;
   font-weight: 800;
-  line-height: 1.42;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 #ackButton {
   width: 100%;
-  min-height: 62px;
+  min-height: 64px;
   border: 0;
   border-radius: 8px;
   color: #ffffff;
@@ -98,4 +115,18 @@ body[data-priority="urgent"] .priority-badge {
 
 body[data-priority="urgent"] .popup-shell {
   border-top-color: var(--red);
+}
+
+@media (max-width: 600px) {
+  .popup-shell {
+    padding: 24px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .message-content {
+    font-size: 32px;
+  }
 }

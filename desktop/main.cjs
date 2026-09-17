@@ -216,9 +216,25 @@ function createPopup(message) {
     activePopup.show();
     activePopup.focus();
     activePopup.moveTop();
+
+    const durationMs = Number(message.duration) > 0 ? Number(message.duration) * 1000 : 0;
+    if (durationMs > 0) {
+      activePopup.__expiryTimer = setTimeout(() => {
+        if (activePopup) {
+          if (socket?.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+              type: "dismissed",
+              batchId: message.batchId
+            }));
+          }
+          activePopup.close();
+        }
+      }, durationMs);
+    }
   });
 
   activePopup.on("closed", () => {
+    clearTimeout(activePopup?.__expiryTimer);
     activePopup = null;
     showNextMessage();
   });
